@@ -1,34 +1,39 @@
-<script>
-function updateMap() {
-  if (!poiData) return;
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Test Peta Leaflet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  poiLayer.clearLayers();
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-  var geojsonLayer = L.geoJSON(poiData, {
-    pointToLayer: function (feature, latlng) {
-      return L.circleMarker(latlng, {
-        radius: 7,
-        fillColor: "blue",
-        color: "#333",
-        weight: 1,
-        fillOpacity: 0.9
-      });
-    },
-
-    onEachFeature: function (feature, layer) {
-      layer.bindPopup("<pre>" + JSON.stringify(feature.properties, null, 2) + "</pre>");
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
-  });
 
-  geojsonLayer.addTo(poiLayer);
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
 
-  if (poiLayer.getLayers().length > 0) {
-    map.fitBounds(poiLayer.getBounds());
-  } else {
-    console.log("Tidak ada layer yang tampil.");
-  }
+<div id="map"></div>
 
-  console.log("Jumlah layer tampil:", poiLayer.getLayers().length);
-  console.log("Isi data GeoJSON:", poiData);
-}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  var map = L.map('map').setView([-0.13, 117.48], 10);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  console.log("Peta berhasil dibuat");
 </script>
+
+</body>
+</html>
