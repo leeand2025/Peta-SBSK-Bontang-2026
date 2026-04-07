@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <title>Test POI GeoJSON</title>
+  <title>Peta SBSK Bontang 2026</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,21 +12,53 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      font-family: Arial, sans-serif;
     }
 
     #map {
       width: 100%;
       height: 100vh;
     }
+
+    .info-box {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      max-width: 260px;
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border: 1px solid #555;
+    }
   </style>
 </head>
 <body>
+
+<div class="info-box">
+  <div id="statistik"><b>Total Aset:</b> 0</div>
+  <div id="legend-items"></div>
+</div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  var map = L.map('map').setView([-0.13, 117.48], 10);
+  var map = L.map('map').setView([0.13, 117.5], 8);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
@@ -35,27 +67,48 @@
   var poiLayer = L.featureGroup().addTo(map);
 
   fetch('bmn_poi_web.geojson')
-    .then(res => {
-      console.log("Status fetch:", res.status, res.statusText);
-      return res.json();
-    })
+    .then(response => response.json())
     .then(data => {
-      console.log("GeoJSON berhasil dimuat:", data);
-      console.log("Jumlah features:", data.features ? data.features.length : 0);
+      var total = 0;
+      var count10 = 0;
+      var count30 = 0;
+      var countAbove = 0;
 
       var geojsonLayer = L.geoJSON(data, {
-        pointToLayer: function(feature, latlng) {
+        pointToLayer: function (feature, latlng) {
+          var d = Number(feature.properties.jarak_cbd);
+          var color = "red";
+
+          if (d <= 10) color = "green";
+          else if (d <= 30) color = "orange";
+
           return L.circleMarker(latlng, {
-            radius: 7,
-            fillColor: "blue",
+            radius: 6,
+            fillColor: color,
             color: "#333",
             weight: 1,
             fillOpacity: 0.9
           });
         },
 
-        onEachFeature: function(feature, layer) {
-          layer.bindPopup("<pre>" + JSON.stringify(feature.properties, null, 2) + "</pre>");
+        onEachFeature: function (feature, layer) {
+          var p = feature.properties;
+          var d = Number(p.jarak_cbd);
+
+          total++;
+          if (d <= 10) count10++;
+          else if (d <= 30) count30++;
+          else countAbove++;
+
+          layer.bindPopup(`
+            <b>${p.kl ?? '-'}</b><br>
+            Kode Barang: ${p.kode_barang ?? '-'}<br>
+            NUP: ${p.nup ?? '-'}<br>
+            Jenis Barang: ${p.jenis_barang ?? '-'}<br>
+            Luas: ${p.luas ?? '-'} m²<br>
+            Jarak ke CBD: <b>${p.jarak_cbd ?? '-'} km</b><br>
+            ${p.foto ? `<img src="${p.foto}" width="250">` : ''}
+          `);
         }
       });
 
@@ -65,10 +118,40 @@
         map.fitBounds(poiLayer.getBounds());
       }
 
-      console.log("Jumlah layer tampil:", poiLayer.getLayers().length);
+      document.getElementById("statistik").innerHTML =
+        `<b>Total Aset:</b> ${total}`;
+
+      var legendHTML = "";
+
+      if (count10 > 0) {
+        legendHTML += `
+          <div class="legend-item">
+            <div class="legend-color" style="background:green"></div>
+            ≤ 10 km : ${count10}
+          </div>`;
+      }
+
+      if (count30 > 0) {
+        legendHTML += `
+          <div class="legend-item">
+            <div class="legend-color" style="background:orange"></div>
+            10–30 km : ${count30}
+          </div>`;
+      }
+
+      if (countAbove > 0) {
+        legendHTML += `
+          <div class="legend-item">
+            <div class="legend-color" style="background:red"></div>
+            > 30 km : ${countAbove}
+          </div>`;
+      }
+
+      document.getElementById("legend-items").innerHTML = legendHTML;
     })
-    .catch(err => {
-      console.error("Gagal load GeoJSON:", err);
+    .catch(error => {
+      console.error("Gagal memuat GeoJSON:", error);
+      alert("GeoJSON gagal dimuat. Cek nama file atau format file.");
     });
 </script>
 
