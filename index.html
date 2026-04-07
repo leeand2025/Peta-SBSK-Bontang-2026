@@ -1,146 +1,11 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<title>Peta SBSK KPKNL Bontang</title>
-
-<!-- Leaflet CSS -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-
-<style>
-  body {
-    margin: 0;
-    padding: 0;
-  }
-
-  #map {
-    height: 100vh;
-    width: 100%;
-  }
-
-  /* PANEL FILTER */
-  #panel {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: white;
-    padding: 10px;
-    z-index: 1000;
-    font-size: 13px;
-    border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
-
-  /* LEGENDA */
-  #legend {
-    position: absolute;
-    bottom: 20px;
-    left: 10px;
-    background: white;
-    padding: 10px;
-    z-index: 1000;
-    font-size: 13px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    margin-top: 4px;
-  }
-
-  .legend-color {
-    width: 14px;
-    height: 14px;
-    margin-right: 6px;
-  }
-</style>
-</head>
-
-<body>
-
-<!-- PANEL FILTER -->
-<div id="panel">
-  <label>Nama Kementerian Lembaga</label><br>
-  <select id="kl" onchange="updateMap()">
-    <option value="all">Semua</option>
-    <option value="BADAN PUSAT STATISTIK">BADAN PUSAT STATISTIK</option>
-    <option value="KEJAKSAAN AGUNG">KEJAKSAAN AGUNG</option>
-    <option value="Kementerian Agama RI">Kementerian Agama RI</option>
-    <option value="KEMENTERIAN AGRARIA DAN TATA RUANG/BPN">KEMENTERIAN AGRARIA DAN TATA RUANG/BPN</option>
-    <option value="KEMENTERIAN KEUANGAN">KEMENTERIAN KEUANGAN</option>
-    <option value="KEMENTERIAN LINGKUNGAN HIDUP DAN KEHUTANAN">KEMENTERIAN LINGKUNGAN HIDUP DAN KEHUTANAN</option>
-    <option value="KEMENTERIAN PERHUBUNGAN">KEMENTERIAN PERHUBUNGAN</option>
-    <option value="KEPOLISIAN NEGARA RI">KEPOLISIAN NEGARA RI</option>
-    <option value="MAHKAMAH AGUNG">MAHKAMAH AGUNG</option>
-
-  </select>
-
-  <br><br>
-
-  <label>Jarak ke CBD</label><br>
-  <select id="jarakcbd_km" onchange="updateMap()">
-    <option value="all">Semua</option>
-    <option value="10">≤ 10 km</option>
-    <option value="30">≤ 30 km</option>
-  </select>
-</div>
-
-<!-- LEGENDA & STATISTIK -->
-<div id="legend">
-  <b>Legenda & Statistik</b>
-  <div id="statistik"></div>
-  <div id="legend-items"></div>
-</div>
-
-<!-- MAP -->
-<div id="map"></div>
-
-<!-- Leaflet JS (WAJIB setelah div map) -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-/* =========================
-   INISIALISASI MAP
-========================= */
-var map = L.map('map', {
-  zoomControl: false
-}).setView([-0.13, 117.48], 10);
-
-L.control.zoom({ position: 'topright' }).addTo(map);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
-}).addTo(map);
-
-var poiLayer = L.featureGroup().addTo(map);
-var poiData;
-var firstLoad = true;
-
-/* =========================
-   LOAD GEOJSON
-========================= */
-fetch('bmn_poi_web.geojson')
-  .then(res => res.json())
-  .then(data => {
-    poiData = data;
-    updateMap();
-  });
-
-/* =========================
-   UPDATE MAP + FILTER
-========================= */
 function updateMap() {
 
   if (!poiData) return;
 
   poiLayer.clearLayers();
 
-  var kl = document.getElementById("nama_satker").value;
+  var kl = document.getElementById("kl").value;
   var jarak_cbd = document.getElementById("jarakcbd_km").value;
 
   var total = 0;
@@ -151,7 +16,7 @@ function updateMap() {
   var geojsonLayer = L.geoJSON(poiData, {
 
     pointToLayer: function (feature, latlng) {
-      var d = Number(feature.properties.jara_kcbd);
+      var d = Number(feature.properties.jarak_cbd);
       var color = "red";
 
       if (d <= 10) color = "green";
@@ -169,7 +34,7 @@ function updateMap() {
     filter: function (feature) {
       var d = Number(feature.properties.jarak_cbd);
 
-      if (nama_satker !== "all" &&
+      if (kl !== "all" &&
           feature.properties.kl !== kl)
         return false;
 
@@ -189,13 +54,13 @@ function updateMap() {
       var p = feature.properties;
 
       layer.bindPopup(`
-        <b>${p.kl}</b><br>
-        Kode Barang: ${p.kode_barang}<br>
-        NUP: ${p.nup}<br>
-        Jenis Barang: ${p.jenis_barang}<br>
-        Luas: ${p.luas} m²<br>
-        Jarak ke CBD: <b>${p.jarak_cbd} km</b><br>
-        <img src="${p.foto}" width="250">
+        <b>${p.kl ?? '-'}</b><br>
+        Kode Barang: ${p.kode_barang ?? '-'}<br>
+        NUP: ${p.nup ?? '-'}<br>
+        Jenis Barang: ${p.jenis_barang ?? '-'}<br>
+        Luas: ${p.luas ?? '-'} m²<br>
+        Jarak ke CBD: <b>${p.jarak_cbd ?? '-'} km</b><br>
+        ${p.foto ? `<img src="${p.foto}" width="250">` : ''}
       `);
     }
   });
@@ -236,6 +101,3 @@ function updateMap() {
   document.getElementById("legend-items").innerHTML = legendHTML;
 }
 </script>
-
-</body>
-</html>
