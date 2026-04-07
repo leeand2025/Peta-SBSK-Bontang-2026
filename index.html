@@ -2,10 +2,10 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <title>Test Peta Leaflet</title>
+  <title>Test POI GeoJSON</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     html, body {
@@ -29,10 +29,47 @@
   var map = L.map('map').setView([-0.13, 117.48], 10);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  console.log("Peta berhasil dibuat");
+  var poiLayer = L.featureGroup().addTo(map);
+
+  fetch('bmn_poi_web.geojson')
+    .then(res => {
+      console.log("Status fetch:", res.status, res.statusText);
+      return res.json();
+    })
+    .then(data => {
+      console.log("GeoJSON berhasil dimuat:", data);
+      console.log("Jumlah features:", data.features ? data.features.length : 0);
+
+      var geojsonLayer = L.geoJSON(data, {
+        pointToLayer: function(feature, latlng) {
+          return L.circleMarker(latlng, {
+            radius: 7,
+            fillColor: "blue",
+            color: "#333",
+            weight: 1,
+            fillOpacity: 0.9
+          });
+        },
+
+        onEachFeature: function(feature, layer) {
+          layer.bindPopup("<pre>" + JSON.stringify(feature.properties, null, 2) + "</pre>");
+        }
+      });
+
+      geojsonLayer.addTo(poiLayer);
+
+      if (poiLayer.getLayers().length > 0) {
+        map.fitBounds(poiLayer.getBounds());
+      }
+
+      console.log("Jumlah layer tampil:", poiLayer.getLayers().length);
+    })
+    .catch(err => {
+      console.error("Gagal load GeoJSON:", err);
+    });
 </script>
 
 </body>
