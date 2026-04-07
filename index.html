@@ -1,103 +1,34 @@
 <script>
 function updateMap() {
-
   if (!poiData) return;
 
   poiLayer.clearLayers();
 
-  var kl = document.getElementById("kl").value;
-  var jarak_cbd = document.getElementById("jarakcbd_km").value;
-
-  var total = 0;
-  var count10 = 0;
-  var count30 = 0;
-  var countAbove = 0;
-
   var geojsonLayer = L.geoJSON(poiData, {
-
     pointToLayer: function (feature, latlng) {
-      var d = Number(feature.properties.jarak_cbd);
-      var color = "red";
-
-      if (d <= 10) color = "green";
-      else if (d <= 30) color = "orange";
-
       return L.circleMarker(latlng, {
-        radius: 6,
-        fillColor: color,
+        radius: 7,
+        fillColor: "blue",
         color: "#333",
         weight: 1,
         fillOpacity: 0.9
       });
     },
 
-    filter: function (feature) {
-      var d = Number(feature.properties.jarak_cbd);
-
-      if (kl !== "all" &&
-          feature.properties.kl !== kl)
-        return false;
-
-      if (jarak_cbd !== "all" &&
-          d > Number(jarak_cbd))
-        return false;
-
-      total++;
-      if (d <= 10) count10++;
-      else if (d <= 30) count30++;
-      else countAbove++;
-
-      return true;
-    },
-
     onEachFeature: function (feature, layer) {
-      var p = feature.properties;
-
-      layer.bindPopup(`
-        <b>${p.kl ?? '-'}</b><br>
-        Kode Barang: ${p.kode_barang ?? '-'}<br>
-        NUP: ${p.nup ?? '-'}<br>
-        Jenis Barang: ${p.jenis_barang ?? '-'}<br>
-        Luas: ${p.luas ?? '-'} m²<br>
-        Jarak ke CBD: <b>${p.jarak_cbd ?? '-'} km</b><br>
-        ${p.foto ? `<img src="${p.foto}" width="250">` : ''}
-      `);
+      layer.bindPopup("<pre>" + JSON.stringify(feature.properties, null, 2) + "</pre>");
     }
   });
 
   geojsonLayer.addTo(poiLayer);
 
-  if (poiLayer.getLayers().length > 0 && firstLoad) {
+  if (poiLayer.getLayers().length > 0) {
     map.fitBounds(poiLayer.getBounds());
-    firstLoad = false;
+  } else {
+    console.log("Tidak ada layer yang tampil.");
   }
 
-  document.getElementById("statistik").innerHTML =
-    `<b>Total ASET:</b> ${total}`;
-
-  var legendHTML = "";
-
-  if (count10 > 0)
-    legendHTML += `
-      <div class="legend-item">
-        <div class="legend-color" style="background:green"></div>
-        ≤ 10 km : ${count10}
-      </div>`;
-
-  if (count30 > 0)
-    legendHTML += `
-      <div class="legend-item">
-        <div class="legend-color" style="background:orange"></div>
-        10–30 km : ${count30}
-      </div>`;
-
-  if (countAbove > 0)
-    legendHTML += `
-      <div class="legend-item">
-        <div class="legend-color" style="background:red"></div>
-        > 30 km : ${countAbove}
-      </div>`;
-
-  document.getElementById("legend-items").innerHTML = legendHTML;
+  console.log("Jumlah layer tampil:", poiLayer.getLayers().length);
+  console.log("Isi data GeoJSON:", poiData);
 }
 </script>
